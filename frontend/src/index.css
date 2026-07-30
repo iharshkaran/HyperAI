@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+#recentChat::-webkit-scrollbar-track {
+  background-color: #1e1f20;
+  border-radius: 10px;
+}
+
+#recentChat::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: #3e3f40 ;
+}
+
+#recentChat::-webkit-scrollbar {
+  width: 8px;
+}
