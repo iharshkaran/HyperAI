@@ -14,7 +14,7 @@ const Sidebar = () => {
     }
 
     return (
-        <aside className={`flex flex-col justify-between bg-[#1e1f20] border-r border-zinc-800 transition-all duration-300 ease-in-out ${isOpen ? 'w-65 p-3' : 'w-16 p-3 items-center'}`}>
+        <aside className={`flex flex-col justify-between bg-[#101010] border-r border-zinc-800 transition-all duration-300 ease-in-out ${isOpen ? 'w-65 p-3' : 'w-16 p-3 items-center'}`}>
 
             <div className='flex flex-col gap-5 mb-4.5'>
                 <div className='flex justify-between items-center'>
@@ -30,7 +30,7 @@ const Sidebar = () => {
                     </button>
                 </div>
 
-                <button className={`flex gap-3 items-center w-full rounded-lg bg-[#131313] cursor-pointer ${isOpen? 'px-3 py-2':'p-2'}`}>
+                <button className={`flex gap-3 items-center w-full rounded-lg bg-black cursor-pointer ${isOpen? 'px-3 py-2':'p-2'}`}>
                     <SquarePen size={18} />
                     {isOpen && <span className="text-sm font-medium ">New chat</span>}
                 </button>
@@ -41,60 +41,66 @@ const Sidebar = () => {
 
                 {isOpen && (
                     <div className="mt-2 space-y-3">
-                        <p className="px-2.5 text-sm font-medium text-gray-200">Recent</p>
+                        <p className="px-3 text-sm font-semibold text-white">Recent</p>
                         <div className="space-y-2">
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                           <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                             <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                           <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                             <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                           <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                             <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                           <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
-                            <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700/40 rounded-lg truncate">
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
+                                Project Setup
+                            </button>
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
+                                Project Setup
+                            </button>
+                            <button className="w-full text-left px-3 py-2 text-sm text-white hover:bg-gray-700/40 rounded-lg truncate cursor-pointer">
                                 Project Setup
                             </button>
 
