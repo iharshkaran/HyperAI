@@ -1,10 +1,8 @@
-import AppLayout from "./components/layout/AppLayout"
+
+import { AppRoutes } from './routes/AppRoutes';
+
 const App = () => {
-  return (
-    <div>
-      <AppLayout />
-    </div>
-  )
+  return <AppRoutes />;
 }
 
 export default App
