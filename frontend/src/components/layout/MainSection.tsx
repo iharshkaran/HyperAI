@@ -1,10 +1,16 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, User, Sparkles, SendHorizonal } from 'lucide-react';
+import { Bot, Sparkles, SendHorizonal } from 'lucide-react';
+import { io, Socket } from "socket.io-client";
+
+
+const socket: Socket = io('http://localhost:3000', {
+  withCredentials: true
+}); // Backend connection
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'model';
   content: string;
 }
 
@@ -12,6 +18,25 @@ const MainSection = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+// Initialize Socket Connection
+  useEffect(() => {
+    socket.on('ai-response',(data: { content: string }) => {
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        role: 'model',
+        content: data.content,
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+    });
+
+    return () => {
+      socket.off('ai-response');
+    };
+
+  }, []);
+
+
 
   // Auto-scroll to bottom when new message arrives
   useEffect(() => {
@@ -29,17 +54,13 @@ const MainSection = () => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
 
-    // Simulated AI Response
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `I received your message. HyperAI is up and running!`,
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    }, 1000);
+    socket.emit('ai-message', {
+      chat: "6a6d2ea52a2e98cf11b84098", 
+      content: input
+    });
+
+    setInput('');
   };
 
   return (
@@ -48,7 +69,7 @@ const MainSection = () => {
       {/* 1. Header / Navbar */}
       <header className="flex items-center justify-between px-6 py-3.5 border-b border-zinc-800 bg-[#101010] backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl text-white shadow-md">
+          <div className="p-2 bg-linear-to-tr from-blue-600 to-indigo-600 rounded-xl text-white shadow-md">
             <Bot size={20} />
           </div>
           <div>
@@ -84,10 +105,10 @@ const MainSection = () => {
               }`}
             >
               <div
-                className={`px-5 py-3 rounded-3xl text-sm/89 max-w-[70%] leading-relaxed shadow-sm ${
+                className={`px-5 py-3 rounded-3xl  max-w-[70%] leading-relaxed shadow-sm ${
                   msg.role === 'user'
                     ? 'bg-[#1e1f20] text-white'
-                    : ''
+                    : 'max-w-full'
                 }`}
               >
                 {msg.content}
