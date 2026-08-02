@@ -1,16 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-// 1. Shape the user data (According to MongoDB schema)
-interface User {
+export interface User {
   _id: string;
   email: string;
   fullName: {
     firstName: string;
-    lastName?: string;
+    lastName: string;
   };
 }
 
-// 2. Blueprint for the context value
 interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
@@ -18,26 +16,26 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// 3. Main Context object
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 4. Provider Component
-export const AuthProvider = (props: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem('hyperai_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  
+    // State to hold the authenticated user
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
 
   const handleSetUser = (userData: User | null) => {
     setUser(userData);
     if (userData) {
-      localStorage.setItem('hyperai_user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(userData));
     } else {
-      localStorage.removeItem('hyperai_user');
+      localStorage.removeItem('user');
     }
   };
 
@@ -54,12 +52,11 @@ export const AuthProvider = (props: { children: React.ReactNode }) => {
         logout,
       }}
     >
-      {props.children}
+      {children}
     </AuthContext.Provider>
   );
 };
 
-// 5. Custom hookfor easy access
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

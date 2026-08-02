@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 
 export const Register: React.FC = () => {
   const [firstName, setFirstName] = useState('');
@@ -11,6 +12,7 @@ export const Register: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const { setUser } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,32 +20,21 @@ export const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await api.post('/auth/register', {
+        fullName: {
+          firstName,
+          lastName,
         },
-        credentials: 'include', // Cookie set karne ke liye zaroori hai
-        body: JSON.stringify({
-          fullName: {
-            firstName,
-            lastName,
-          },
-          email,
-          password,
-        }),
+        email,
+        password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+      if (response.data) {
+        setUser(response.data.user || response.data);
+        navigate('/'); // Account banne par seedha main chat dashboard par redirect
       }
-
-      // Context me registered user save kar do
-      setUser(data.user);
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      setError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -80,6 +71,7 @@ export const Register: React.FC = () => {
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                required
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
                 placeholder="Karan"
               />
@@ -113,7 +105,7 @@ export const Register: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 mt-2"
+            className="w-full bg-blue-600 hover:bg-blue-500 font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 mt-2 cursor-pointer"
           >
             {loading ? 'Creating account...' : 'Register'}
           </button>
@@ -124,7 +116,6 @@ export const Register: React.FC = () => {
               Login
             </Link>
           </p>
-
         </form>
       </div>
     </div>
