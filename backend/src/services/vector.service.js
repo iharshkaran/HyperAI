@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Pinecone } from '@pinecone-database/pinecone';
 
 
@@ -38,4 +39,18 @@ export async function queryMemory({ queryVector, limit = 5, metadata }) {
 
     return data.matches
 
+}
+
+export async function deleteMemory(chatId) {
+
+    try{
+        await chatGptCloneIndex.deleteMany({
+            filter: {
+                chat: {$eq:chatId}
+            }
+        })
+        console.log(`Vector memories deleted for chatId: ${chatId}`);
+    } catch (err) {
+        console.error("Failed to delete memories from Pinecone:", err);
+    }
 }

@@ -5,25 +5,34 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({});
 
-export async function generateText(prompt) {
+export async function generateTextStream(contents) {
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-lite",
-        contents: prompt,
+    const responseStream = await ai.models.generateContentStream({
+        model: 'gemini-3.1-flash-lite',
+        contents: contents,
     });
 
-    return response.text;
+    return responseStream;
 }
 
-export async function generateVector(content) {
-
-    const response = await ai.models.embedContent({
-        model: 'gemini-embedding-2',
-        contents: content,
-        config: {
-            outputDimensionality: 768
+export async function generateVector(text) {
+    try {
+        if (!text || typeof text !== 'string') {
+            console.error("generateVector error: Valid text string required");
+            return [];
         }
-    });
 
-    return response.embeddings[0].values
+        const response = await ai.models.embedContent({
+            model: "gemini-embedding-2",
+            contents: text,
+            config: {
+                outputDimensionality: 768
+            }
+        });
+
+        return response.embeddings[0].values;
+    } catch (err) {
+        console.error("Error in generateVector:", err);
+        return [];
+    }
 }
