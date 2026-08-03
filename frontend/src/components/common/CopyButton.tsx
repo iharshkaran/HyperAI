@@ -17,7 +17,7 @@ export const CopyButton = ({ text }: { text: string }) => {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-100 bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/50 rounded-md transition-all cursor-pointer"
+      className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-100 bg-(--card) hover:bg-zinc-700/80 border border-(--border) rounded-md transition-all cursor-pointer"
       title="Copy code"
     >
       {copied ? (

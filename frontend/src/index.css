@@ -1,13 +1,48 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+
+:root {
+  --background: #ffffff;
+  --background2: #444444;
+  --surface: #b3a4a4;
+  --card: #ededed;
+  --box: #f0f0f0;
+  --text1: #050505;
+  --text2: #3f3f3f;
+  --text3: #646464;
+  --border: #d2d2d2;
+  --primary: #2563eb;
+
+  --scroll-thumb:#bababa;
+  --scroll-track:#eeeeee;
+}
+
+.dark {
+
+  --background: #080808;
+  --background2: #131313;
+  --surface: #171717;
+  --card: #19191c;
+  --box: #1e1f20;
+  --text1: #ffffff;
+  --text2: #ececec;
+  --text3: #a1a1aa;
+  --border: #262629;
+  --primary: #2563eb;
+
+  --scroll-thumb:#3E3F40;
+  --scroll-track:#1e1f20;
+}
 
 #recentChat::-webkit-scrollbar-track {
-  background-color: #1e1f20;
+  background-color: var(--scroll-track);
   border-radius: 10px;
 }
 
 #recentChat::-webkit-scrollbar-thumb {
   border-radius: 10px;
-  background-color: #3e3f40 ;
+  background-color: var(--scroll-thumb);
 }
 
 #recentChat::-webkit-scrollbar {
@@ -15,13 +50,13 @@
 }
 
 #chatWindow::-webkit-scrollbar-track {
-  background-color: #1e1f20;
+  background-color: var(--scroll-track);
   
 }
 
 #chatWindow::-webkit-scrollbar-thumb {
   border-radius: 10px;
-  background-color: #3e3f40 ;
+  background-color: var(--scroll-thumb);
 }
 
 #chatWindow::-webkit-scrollbar {
