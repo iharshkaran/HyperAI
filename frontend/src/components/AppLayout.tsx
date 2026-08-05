@@ -1,5 +1,5 @@
-import Sidebar from './Sidebar'
-import MainSection from './MainSection'
+import Sidebar from './sidebar/Sidebar'
+import MainSection from './chat/MainSection'
 
 const AppLayout = () => {
   return (

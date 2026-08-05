@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Sparkles, SendHorizonal } from 'lucide-react';
+import { Bot, Sparkles, Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-import { socket } from '../services/socket';
-import { useChat } from '../context/ChatContext';
-import { CopyButton } from './common/CopyButton';
+import { socket } from '../../services/socket';
+import { useChat } from '../../context/ChatContext';
+import { CopyButton } from '../common/CopyButton';
 
 interface Message {
   id: string;
@@ -321,7 +321,7 @@ const MainSection = () => {
             disabled={!input.trim() || isLoading}
             className="p-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white rounded-full transition-all cursor-pointer disabled:cursor-not-allowed"
           >
-            <SendHorizonal size={16} />
+            <Send size={16} />
           </button>
         </form>
         <p className='flex justify-center mt-3 text-xs text-[#55555]'>HyperAI can make mistakes. Check important info.</p>

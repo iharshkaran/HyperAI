@@ -1,9 +1,9 @@
 import { PanelLeft, PanelLeftOpen, PanelLeftClose, SquarePen, User, Settings, Trash2, LogOut, Sun, Moon, Search } from 'lucide-react';
 import { useState, useEffect } from "react";
-import { useChat } from "../context/ChatContext";
-import { useAuth } from "../context/AuthContext";
-import { useAppContext } from '../context/AppContext';
-import SettingsModal from './SettingsModal';
+import { useChat } from "../../context/ChatContext";
+import { useAuth } from "../../context/AuthContext";
+import { useAppContext } from '../../context/AppContext';
+import SettingsModal from '../settings/SettingsModal';
 
 const Sidebar = () => {
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
