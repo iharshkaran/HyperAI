@@ -31,6 +31,12 @@ export const Login: React.FC = () => {
     }
   };
 
+  const handleGoogleLogin = () => {
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+          // Direct backend ke Passport route par bhej do
+          window.location.href = `${BASE_URL}/api/auth/google`;
+};
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white p-4">
       <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl">
@@ -74,6 +80,32 @@ export const Login: React.FC = () => {
               Sign up
             </Link>
           </p>
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full mt-3 py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M21.35 11.1H12v3.33h5.36c-.23 1.25-.94 2.31-2 3.03v2.52h3.24c1.9-1.75 2.99-4.32 2.99-7.46 0-.52-.05-1.02-.14-1.42z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 21c2.73 0 5.02-.9 6.7-2.45l-3.24-2.52c-.9.6-2.05.97-3.46.97-2.64 0-4.88-1.78-5.68-4.18H3.07v2.63C4.73 18.72 8.12 21 12 21z"
+              />
+              <path
+                fill="currentColor"
+                d="M6.32 12.82c-.2-.6-.32-1.24-.32-1.82s.12-1.22.32-1.82V6.55H3.07A9.98 9.98 0 0 0 2 11c0 1.61.39 3.14 1.07 4.45l3.25-2.63z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 5.38c1.48 0 2.82.51 3.87 1.51l2.9-2.9C17.01 2.24 14.72 1.33 12 1.33 8.12 1.33 4.73 3.61 3.07 6.55l3.25 2.63c.8-2.4 3.04-4.18 5.68-4.18z"
+              />
+            </svg>
+            Continue with Google
+          </button>
 
           <button
             type="submit"

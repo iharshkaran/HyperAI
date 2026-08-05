@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
+import { AuthSuccess } from '../pages/AuthSuccess'; // 👈 1. Import AuthSuccess
 import AppLayout from '../components/AppLayout';
 
 // Protected Route Component
@@ -47,6 +48,9 @@ export const AppRoutes: React.FC = () => {
           </PublicRoute>
         }
       />
+
+      {/*2. Google OAuth Callback Route */}
+      <Route path="/auth-success" element={<AuthSuccess />} />
 
       {/* Catch-all Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
