@@ -1,7 +1,7 @@
 import User from "../models/user.model.js"
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { generateToken, setTokenCookie, clearTokenCookie} from "../services/token.service.js";
+import { generateToken, setTokenCookie, clearTokenCookie } from "../services/token.service.js";
 
 
 // Register
@@ -97,8 +97,34 @@ async function logoutController(req, res) {
     }
 }
 
+
+// Google OAuth Callback
+async function googleCallbackController(req, res) {
+  try {
+    const user = req.user;
+
+    const token = generateToken(user._id);
+    setTokenCookie(res, token);
+
+    const userPayload = encodeURIComponent(
+      JSON.stringify({
+        _id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        avatar: user.avatar || '',
+      })
+    );
+
+    res.redirect(`${process.env.FRONTEND_URL}/auth-success?token=${token}&user=${userPayload}`);
+  } catch (error) {
+    console.error("Google Auth Controller Error:", error);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=google_failed`);
+  }
+}
+
 export default {
     registerController,
     loginController,
-    logoutController
+    logoutController,
+    googleCallbackController
 };
