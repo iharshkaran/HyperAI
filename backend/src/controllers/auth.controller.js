@@ -1,13 +1,17 @@
 import User from "../models/user.model.js"
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { generateToken, setTokenCookie, clearTokenCookie} from "../services/token.service.js";
+
 
 // Register
 async function registerController(req, res) {
     try {
         const { fullName: { firstName, lastName }, email, password } = req.body;
 
-        const isUserAlreadyExists = await User.findOne({ email });
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const isUserAlreadyExists = await User.findOne({ email: normalizedEmail });
 
         if (isUserAlreadyExists) {
             return res.status(400).json({ message: "User already exists" })
@@ -16,15 +20,16 @@ async function registerController(req, res) {
         const hashPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
-            email,
+            email: normalizedEmail,
             fullName: {
                 firstName, lastName
             },
             password: hashPassword
         })
 
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-        res.cookie("token", token);
+        const token = generateToken(user._id);
+
+        setTokenCookie(res, token);
 
         res.status(201).json({
             message: "User registered successfully",
@@ -36,6 +41,7 @@ async function registerController(req, res) {
         });
     }
     catch (err) {
+        console.error(err);
         return res.status(500).json({ message: "Failed to Register" });
     }
 }
@@ -46,7 +52,9 @@ async function loginController(req, res) {
     try {
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
             return res.status(400).json({ message: "Invalid email or password" });
@@ -58,9 +66,9 @@ async function loginController(req, res) {
             return res.status(400).json({ message: "Invalid email or password" })
         }
 
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+        const token = generateToken(user._id);
 
-        res.cookie("token", token);
+        setTokenCookie(res, token);
 
         res.status(200).json({
             message: "User Logged in successfully",
@@ -72,11 +80,25 @@ async function loginController(req, res) {
         })
 
     } catch (err) {
+        console.error(err);
         return res.status(500).json({ message: "Failed to Login" });
+    }
+}
+
+
+// Logout
+async function logoutController(req, res) {
+    try {
+        clearTokenCookie(res);
+        res.status(200).json({ message: "User logged out successfully" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to logout" });
     }
 }
 
 export default {
     registerController,
-    loginController
+    loginController,
+    logoutController
 };

@@ -4,7 +4,10 @@ const userSchema = new mongoose.Schema({
 
     email: {
         type: String,
-        required: true
+        required: true,
+        unique: true,
+        lowercase: true,
+        trim: true,
     },
 
     fullName: {
@@ -20,8 +23,18 @@ const userSchema = new mongoose.Schema({
 
     password: {
         type: String
-    }
-},{
+    },
+
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+
+    verificationToken: String,
+
+    verificationTokenExpires: Date,
+
+}, {
     timestamps: true
 })
 
