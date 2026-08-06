@@ -28,19 +28,23 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
-    
+
     googleId: {
         type: String,
         unique: true,
-        sparse: true 
+        sparse: true
     },
     isVerified: {
         type: Boolean,
         default: false,
     },
 
-    verificationToken: String,
-    verificationTokenExpires: Date,
+    otp: {
+        type: String,
+    },
+    otpExpires: {
+        type: Date,
+    },
 }, {
     timestamps: true
 });

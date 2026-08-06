@@ -3,12 +3,14 @@ import passport from "passport";
 import authController from "../controllers/auth.controller.js";
 import { registerValidator, loginValidator } from "../validators/auth.validator.js";
 import { validate } from "../middlewares/validation.middleware.js";
+import { authLimiter, otpLimiter } from '../middlewares/rateLimiter.middleware.js';
 
 const router = express.Router();
 
-router.post('/register', registerValidator, validate, authController.registerController);
-router.post('/login', loginValidator, validate, authController.loginController);
+router.post('/register', authLimiter, registerValidator, validate, authController.registerController);
+router.post('/login', authLimiter, loginValidator, validate, authController.loginController);
 router.post('/logout', authController.logoutController);
+router.post('/verify-otp', otpLimiter, authController.verifyOTPController);
 
 // Google Routes
 router.get(
