@@ -3,8 +3,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Login } from '../pages/Login';
 import { Register } from '../pages/Register';
-import { AuthSuccess } from '../pages/AuthSuccess'; // 👈 1. Import AuthSuccess
+import { AuthSuccess } from '../pages/AuthSuccess';
 import AppLayout from '../components/AppLayout';
+import { VerifyEmail } from '../pages/VerifyEmail';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -48,6 +49,8 @@ export const AppRoutes: React.FC = () => {
           </PublicRoute>
         }
       />
+
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/*2. Google OAuth Callback Route */}
       <Route path="/auth-success" element={<AuthSuccess />} />

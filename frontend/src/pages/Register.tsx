@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import OTPModal from '../components/OTPModal';
 
 export const Register: React.FC = () => {
   const [firstName, setFirstName] = useState('');
@@ -10,6 +11,9 @@ export const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 1. OTP Modal visibility state
+  const [showOtpModal, setShowOtpModal] = useState(false);
 
   const { setUser } = useAuth();
   const navigate = useNavigate();
@@ -29,15 +33,26 @@ export const Register: React.FC = () => {
         password,
       });
 
+      // 2. Direct Redirect ki jagah OTP Modal Open karenge
       if (response.data) {
-        setUser(response.data.user || response.data);
-        navigate('/'); // Account banne par seedha main chat dashboard par redirect
+        setShowOtpModal(true);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
+  };
+
+  // 3. OTP Success Callback Function
+  const handleOTPVerifiedSuccess = (userData: any) => {
+    setShowOtpModal(false);
+
+    if (userData) {
+      setUser(userData); // 👈 User Context update (Auto Login)
+    }
+
+    navigate('/'); // 🚀 Seedha Main Chat Dashboard par redirect!
   };
 
   return (
@@ -118,6 +133,14 @@ export const Register: React.FC = () => {
           </p>
         </form>
       </div>
+
+      {/* 4. OTP Overlay Modal Rendered */}
+      <OTPModal
+        isOpen={showOtpModal}
+        email={email}
+        onClose={() => setShowOtpModal(false)}
+        onSuccess={handleOTPVerifiedSuccess}
+      />
     </div>
   );
 };
