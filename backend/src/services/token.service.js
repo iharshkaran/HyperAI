@@ -1,11 +1,13 @@
 import jwt from "jsonwebtoken";
 
+// Generate JWT Token
 export const generateToken = (userId) => {
     return jwt.sign(
         { userId },process.env.JWT_SECRET,{ expiresIn: "7d"}
     );
 };
 
+// Set Token Cookie
 export const setTokenCookie = (res, token) => {
     res.cookie("token", token, {
         httpOnly: true,
@@ -15,6 +17,7 @@ export const setTokenCookie = (res, token) => {
     });
 };
 
+// Clear Token Cookie
 export const clearTokenCookie = (res) => {
     res.clearCookie("token", {
         httpOnly: true,

@@ -9,10 +9,10 @@ function socketServer(httpServer) {
 
     const io = new Server(httpServer, {
         cors: {
-            origin: "http://localhost:5173",
+            origin: process.env.FRONTEND_URL || "http://localhost:5173",
             methods: ["GET", "POST"],
-            credentials: true
-        }
+            credentials: true,
+        },
     });
 
     // Authentication Middleware
@@ -26,7 +26,8 @@ function socketServer(httpServer) {
 
         try {
             const decoded = jwt.verify(cookies.token, process.env.JWT_SECRET);
-            const user = await User.findById(decoded.userId);
+            const userId = decoded._id || decoded.id || decoded.userId;
+            const user = await User.findById(userId);
             if (!user) return next(new Error("User not found"));
 
             socket.user = user;

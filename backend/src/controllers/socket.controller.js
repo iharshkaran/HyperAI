@@ -4,61 +4,99 @@ import { getRelevantMemory, saveMessageMemory } from "../services/memory.service
 import { buildChatContext } from "../services/prompt.service.js";
 import { generateTextStream } from "../services/ai.service.js";
 
-
 export async function handleAiMessage(socket, messagePayload) {
-    const { chat: chatId, content } = messagePayload;
-    const userId = socket.user._id
+    let { chat: chatId, content } = messagePayload || {};
+    const userId = socket.user?._id;
 
     try {
+        // Payload Validation
+        if (!content || !content.trim()) {
+            return socket.emit("ai-error", { message: "Message content cannot be empty." });
+        }
+
+        const trimmedContent = content.trim();
+        let isNewChatCreated = false;
+
+        // ---- LAZY CHAT CREATION LOGIC ----
+        if (!chatId) {
+            // Auto-generate title from first user message
+            const autoTitle = trimmedContent.length > 30
+                ? trimmedContent.substring(0, 30) + '...'
+                : trimmedContent;
+
+            const newChat = await Chat.create({
+                user: userId,
+                title: autoTitle
+            });
+
+            chatId = newChat._id;
+            isNewChatCreated = true;
+
+            // Notify client about new chat creation
+            socket.emit("chat-created", {
+                chatId: newChat._id,
+                title: newChat.title,
+                chat: newChat
+            });
+        } else {
+            // Agar existing chatId bheja hai toh Ownership Check karo
+            const existingChat = await Chat.findOne({ _id: chatId, user: userId });
+            if (!existingChat) {
+                return socket.emit("ai-error", { message: "Chat not found or access denied." });
+            }
+        }
 
         // Save User Message
         const userMsg = await Message.create({
             chat: chatId,
             user: userId,
-            content: content,
+            content: trimmedContent,
             role: "user"
         });
 
-
-        // Auto-title Check (Only on First User Message)
-        const userMessageCount = await Message.countDocuments({
-            chat: chatId,
-            role: "user"
-        });
-
-        if (userMessageCount === 1) {
-            const newTitle = content.length > 30
-                ? content.substring(0, 30) + '...'
-                : content;
-
-            await Chat.findByIdAndUpdate(chatId, { title: newTitle });
-
-            socket.emit("chat-updated", {
-                chatId: chatId,
-                title: newTitle
+        // Update Title for Existing Chats (Only on First User Message if not lazy created)
+        if (!isNewChatCreated) {
+            const userMessageCount = await Message.countDocuments({
+                chat: chatId,
+                role: "user"
             });
+
+            if (userMessageCount === 1) {
+                const newTitle = trimmedContent.length > 30
+                    ? trimmedContent.substring(0, 30) + '...'
+                    : trimmedContent;
+
+                await Chat.findByIdAndUpdate(chatId, { title: newTitle });
+
+                socket.emit("chat-updated", {
+                    chatId: chatId,
+                    title: newTitle
+                });
+            }
         }
 
-
-        // Vectors & Memory Lookup
-        const { vectors, memory } = await getRelevantMemory(userId, content);
-        await saveMessageMemory({ vectors, messageId: userMsg._id, chatId, userId, text: content });
-
+        // Memory & Context Pipeline
+        const { vectors, memory } = await getRelevantMemory(userId, trimmedContent);
+        await saveMessageMemory({
+            vectors,
+            messageId: userMsg._id,
+            chatId,
+            userId,
+            text: trimmedContent
+        });
 
         // Build Prompt Context (LTM + STM)
         const fullPrompt = await buildChatContext(chatId, memory);
-
 
         // Generate AI Response Stream
         const streamResult = await generateTextStream(fullPrompt);
         let fullResponse = "";
 
-       for await (const chunk of streamResult) {
-
+        for await (const chunk of streamResult) {
             let chunkText = "";
 
             if (typeof chunk.text === "function") {
-                chunkText = chunk.text(); 
+                chunkText = chunk.text();
             } else if (typeof chunk.text === "string") {
                 chunkText = chunk.text;
             }
@@ -69,10 +107,9 @@ export async function handleAiMessage(socket, messagePayload) {
 
             socket.emit("ai-response-chunk", {
                 chat: chatId,
-                chunk: chunkText 
+                chunk: chunkText
             });
         }
-
 
         // Save AI Response to Database & Memory
         const aiMsg = await Message.create({
@@ -88,9 +125,9 @@ export async function handleAiMessage(socket, messagePayload) {
             chatId,
             userId,
             text: fullResponse
-        })
+        });
 
-        // Notify stream end
+        // Notify Stream End
         socket.emit("ai-response-end", { chat: chatId });
 
     } catch (err) {
