@@ -128,9 +128,17 @@ const Sidebar = () => {
 
                     {/* User Profile */}
                     <div className={`flex items-center gap-3 ${!isOpen && 'justify-center'}`}>
-                        <button className="flex items-center bg-blue-500 text-white rounded-full p-1.5 cursor-pointer">
-                            <User size={16} />
-                        </button>
+                        {user?.avatar ? (
+                            <img
+                                src={user.avatar}
+                                alt="Profile"
+                                className="w-8 h-8 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">
+                                {user?.fullName?.firstName[0]}
+                            </div>
+                        )}
                         {isOpen && <span className='text-sm cursor-pointer truncate max-w-[120px] text-[var(--text)]'>
                             {userName}
                             <p className="text-[10px] text-emerald-400 flex items-center gap-1.5">
