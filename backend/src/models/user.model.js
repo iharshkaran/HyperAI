@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
         },
         password: {
             type: String,
-            select: false, // Hide password in default queries for security
+            select: false, // Hide password in default queries
         },
         avatar: {
             type: String,
@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
         googleId: {
             type: String,
             unique: true,
-            sparse: true,
+            sparse: true, // Prevents duplicate key errors for non-Google users
         },
         isVerified: {
             type: Boolean,
@@ -44,12 +44,20 @@ const userSchema = new mongoose.Schema(
         },
         otp: {
             type: String,
-            select: false, // Hide OTP in default queries
+            select: false,
         },
         otpExpires: {
             type: Date,
-            select: false, // Hide OTP expiration in default queries
+            select: false,
         },
+        resetPasswordToken: { 
+            type: String,
+            select: false, // Added for security
+        },
+        resetPasswordExpires: { 
+            type: Date,
+            select: false, // Added for security
+        }
     },
     {
         timestamps: true,

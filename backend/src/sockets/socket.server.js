@@ -2,11 +2,10 @@ import { Server } from "socket.io";
 import * as cookie from "cookie";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
-import Chat from "../models/chat.model.js";
 import { handleAiMessage } from "../controllers/socket.controller.js";
 
-function socketServer(httpServer) {
 
+function socketServer(httpServer) {
     const io = new Server(httpServer, {
         cors: {
             origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -15,10 +14,12 @@ function socketServer(httpServer) {
         },
     });
 
+
     // Authentication Middleware
     io.use(async (socket, next) => {
+        const rawCookies = socket.handshake.headers.cookie || "";
 
-        const cookies = cookie.parseCookie(socket.handshake.headers.cookie || "");
+        const cookies = cookie.parseCookie(rawCookies);
 
         if (!cookies.token) {
             return next(new Error("Authentication error: No token provided"));
@@ -37,11 +38,19 @@ function socketServer(httpServer) {
         }
     });
 
+
     // Connection Events
     io.on("connection", (socket) => {
+        console.log(`Connected: ${socket.id} | User: ${socket.user._id}`);
 
+        // AI Message Event Listener
         socket.on("ai-message", (messagePayload) => {
             handleAiMessage(socket, messagePayload);
+        });
+
+        // Disconnect Handler
+        socket.on("disconnect", () => {
+            console.log(`Disconnected: ${socket.id}`);
         });
     });
 }

@@ -24,10 +24,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
+app.set("trust proxy", 1);
 
 // API Routes Mounting
 app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/chats', chatRoutes);
 
 // Health Check Endpoint
 app.get('/health', (req, res) => {

@@ -4,12 +4,23 @@ import { getRelevantMemory, saveMessageMemory } from "../services/memory.service
 import { buildChatContext } from "../services/prompt.service.js";
 import { generateTextStream } from "../services/ai.service.js";
 
+
+
+// Helper Function: Streaming Chunk Extract
+function extractChunkText(chunk) {
+    if (typeof chunk.text === "function") return chunk.text();
+    if (typeof chunk.text === "string") return chunk.text;
+    return "";
+}
+
+
+// ---- HANDLE NEW AI MESSAGE ----
 export async function handleAiMessage(socket, messagePayload) {
     let { chat: chatId, content } = messagePayload || {};
     const userId = socket.user?._id;
 
     try {
-        // Payload Validation
+        // 1. Payload Validation
         if (!content || !content.trim()) {
             return socket.emit("ai-error", { message: "Message content cannot be empty." });
         }
@@ -17,9 +28,8 @@ export async function handleAiMessage(socket, messagePayload) {
         const trimmedContent = content.trim();
         let isNewChatCreated = false;
 
-        // ---- LAZY CHAT CREATION LOGIC ----
+        // 2. Lazy Chat Creation
         if (!chatId) {
-            // Auto-generate title from first user message
             const autoTitle = trimmedContent.length > 30
                 ? trimmedContent.substring(0, 30) + '...'
                 : trimmedContent;
@@ -32,21 +42,19 @@ export async function handleAiMessage(socket, messagePayload) {
             chatId = newChat._id;
             isNewChatCreated = true;
 
-            // Notify client about new chat creation
             socket.emit("chat-created", {
                 chatId: newChat._id,
                 title: newChat.title,
                 chat: newChat
             });
         } else {
-            // Agar existing chatId bheja hai toh Ownership Check karo
             const existingChat = await Chat.findOne({ _id: chatId, user: userId });
             if (!existingChat) {
                 return socket.emit("ai-error", { message: "Chat not found or access denied." });
             }
         }
 
-        // Save User Message
+        // 3. Save User Message
         const userMsg = await Message.create({
             chat: chatId,
             user: userId,
@@ -54,7 +62,7 @@ export async function handleAiMessage(socket, messagePayload) {
             role: "user"
         });
 
-        // Update Title for Existing Chats (Only on First User Message if not lazy created)
+        // 4. Title Update for Existing Chats
         if (!isNewChatCreated) {
             const userMessageCount = await Message.countDocuments({
                 chat: chatId,
@@ -75,7 +83,7 @@ export async function handleAiMessage(socket, messagePayload) {
             }
         }
 
-        // Memory & Context Pipeline
+        // 5. Memory & Context Pipeline
         const { vectors, memory } = await getRelevantMemory(userId, trimmedContent);
         await saveMessageMemory({
             vectors,
@@ -85,22 +93,14 @@ export async function handleAiMessage(socket, messagePayload) {
             text: trimmedContent
         });
 
-        // Build Prompt Context (LTM + STM)
         const fullPrompt = await buildChatContext(chatId, memory);
 
-        // Generate AI Response Stream
+        // 6. Generate AI Response Stream
         const streamResult = await generateTextStream(fullPrompt);
         let fullResponse = "";
 
         for await (const chunk of streamResult) {
-            let chunkText = "";
-
-            if (typeof chunk.text === "function") {
-                chunkText = chunk.text();
-            } else if (typeof chunk.text === "string") {
-                chunkText = chunk.text;
-            }
-
+            const chunkText = extractChunkText(chunk);
             if (!chunkText) continue;
 
             fullResponse += chunkText;
@@ -111,7 +111,7 @@ export async function handleAiMessage(socket, messagePayload) {
             });
         }
 
-        // Save AI Response to Database & Memory
+        // 7. Save AI Response & Notify End
         const aiMsg = await Message.create({
             chat: chatId,
             user: userId,
@@ -127,7 +127,6 @@ export async function handleAiMessage(socket, messagePayload) {
             text: fullResponse
         });
 
-        // Notify Stream End
         socket.emit("ai-response-end", { chat: chatId });
 
     } catch (err) {

@@ -7,6 +7,8 @@ import {
     verifyOTPValidator,
     resendOTPValidator,
     updateProfileValidator,
+    forgotPasswordValidator,
+    resetPasswordValidator,
 } from '../validators/auth.validator.js';
 import { validate } from '../middlewares/validation.middleware.js';
 import { authLimiter, otpLimiter } from '../middlewares/rateLimiter.middleware.js';
@@ -14,7 +16,15 @@ import { authUser } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
-//--- PUBLIC AUTH ROUTES ---
+// Helper to sanitize FRONTEND_URL and prevent trailing-slash issues
+const getFrontendUrl = () => {
+    return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+};
+
+// ==========================================
+//           PUBLIC AUTH ROUTES
+// ==========================================
+
 // Register User
 router.post(
     '/register',
@@ -51,9 +61,26 @@ router.post(
     authController.loginController
 );
 
+// Forgot Password
+router.post(
+    '/forgot-password',
+    authLimiter,
+    forgotPasswordValidator,
+    validate,
+    authController.forgotPasswordController
+);
+
+// Reset Password
+router.post(
+    '/reset-password/:token',
+    authLimiter,
+    resetPasswordValidator,
+    validate,
+    authController.resetPasswordController
+);
+
 // Logout User
 router.post('/logout', authController.logoutController);
-
 
 // Google OAuth Routes
 router.get(
@@ -63,26 +90,35 @@ router.get(
 
 router.get('/google/callback', (req, res, next) => {
     passport.authenticate('google', { session: false }, (err, user, info) => {
+        const frontendUrl = getFrontendUrl();
+
         if (err) {
             console.error('Passport Auth Error:', err);
-            return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+            return res.redirect(`${frontendUrl}/login?error=auth_failed`);
         }
         if (!user) {
             console.error('No user returned from Google strategy:', info);
-            return res.redirect(`${process.env.FRONTEND_URL}/login?error=no_user`);
+            return res.redirect(`${frontendUrl}/login?error=no_user`);
         }
         req.user = user;
         return authController.googleCallbackController(req, res);
     })(req, res, next);
 });
 
-//--- PROTECTED USER ROUTES ---
+// ==========================================
+//         PROTECTED USER ROUTES
+// ==========================================
 
 // Get Current User Info
 router.get('/me', authUser, authController.getMeController);
 
 // Update Profile
-router.put('/update-profile', authUser, updateProfileValidator, validate, authController.updateProfileController);
-
+router.put(
+    '/update-profile',
+    authUser,
+    updateProfileValidator,
+    validate,
+    authController.updateProfileController
+);
 
 export default router;
