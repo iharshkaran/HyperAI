@@ -12,7 +12,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      callbackURL: '/api/auth/google/callback', // Relative path works automatically for both Localhost & Render
+      callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback', // Relative path works automatically for both Localhost & Render
       proxy: true, // Crucial for Render / reverse proxies
     },
     async (accessToken, refreshToken, profile, done) => {

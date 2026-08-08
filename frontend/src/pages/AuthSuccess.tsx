@@ -15,16 +15,15 @@ export const AuthSuccess = () => {
       try {
         const userData = JSON.parse(decodeURIComponent(userPayload));
 
-        // 1. Agar token localStorage me rakhte ho toh backup ke liye set kar do
+        // 1. Store the token in localStorage
         localStorage.setItem('token', token);
 
-        // 2. Auth context state update karo
+        // 2. Auth context state update
         if (setUser) {
           setUser(userData);
         }
 
-        // 3. Full page reload ke saath home page par bhejo 
-        // (Isse AuthContext fresh cookie read kar leta hai)
+        // 3. Full page reload -
         setTimeout(() => {
           window.location.href = '/';
         }, 100);
