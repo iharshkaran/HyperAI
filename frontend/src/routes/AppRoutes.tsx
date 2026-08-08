@@ -1,43 +1,72 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Login } from '../pages/Login';
-import { Register } from '../pages/Register';
+import { useAuth } from '../hooks/useAuth';
+import { AuthPage } from '../pages/AuthPage';
+import ChatPage from '../pages/ChatPage';
 import { AuthSuccess } from '../pages/AuthSuccess';
-import AppLayout from '../components/AppLayout';
-import { VerifyEmail } from '../pages/VerifyEmail';
 
-// Protected Route Component
+// Protected Route Guard
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full bg-zinc-950 text-white flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs text-zinc-500 font-medium">Loading...</p>
+      </div>
+    );
+  }
+
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
-// Public Route Component
+// Public Route Guard
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full bg-zinc-950 text-white flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs text-zinc-500 font-medium">Loading...</p>
+      </div>
+    );
+  }
+
   return !isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
 };
 
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Protected Main Chat App */}
+      
+      {/* New Chat / Default Dashboard */}
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <AppLayout />
+            <ChatPage />
           </ProtectedRoute>
         }
       />
 
-      {/* Auth Pages */}
+      {/* Dynamic Chat Route*/}
+      <Route
+        path="/c/:chatId"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Auth Routes */}
       <Route
         path="/login"
         element={
           <PublicRoute>
-            <Login />
+            <AuthPage />
           </PublicRoute>
         }
       />
@@ -45,14 +74,37 @@ export const AppRoutes: React.FC = () => {
         path="/register"
         element={
           <PublicRoute>
-            <Register />
+            <AuthPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/verify-email"
+        element={
+          <PublicRoute>
+            <AuthPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <AuthPage />
           </PublicRoute>
         }
       />
 
-      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route
+        path="/reset-password/:token"
+        element={
+          <PublicRoute>
+            <AuthPage />
+          </PublicRoute>
+        }
+      />
 
-      {/*2. Google OAuth Callback Route */}
+      {/* Auth Success Route */}
       <Route path="/auth-success" element={<AuthSuccess />} />
 
       {/* Catch-all Fallback */}

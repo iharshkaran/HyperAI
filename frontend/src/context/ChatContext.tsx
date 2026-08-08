@@ -1,155 +1,104 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { socket } from '../services/socket';
-
-interface Message {
-  _id?: string;
-  role: 'user' | 'model';
-  content: string;
-}
-
-interface Chat {
-  _id: string;
-  title: string;
-}
-
-interface ChatContextType {
-  chats: Chat[];
-  activeChatId: string | null;
-  messages: Message[];
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
-  setActiveChatId: (id: string | null) => void;
-  createNewChat: () => Promise<void>;
-  fetchChats: () => Promise<void>;
-  deleteChat: (chatId: string) => Promise<void>;
-}
+import React, { createContext, useState, useEffect, type ReactNode, useCallback } from 'react';
+import { type Chat, type Message, type ChatContextType } from '../types/chat.types';
+import { chatService } from '../services/chat.service';
+import { useChatSockets } from '../hooks/useChatSockets';
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export const ChatProvider = (props: { children: React.ReactNode }) => {
+export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // Fetch all user chats
-  const fetchChats = async () => {
+  const [isChatsLoading, setIsChatsLoading] = useState<boolean>(false);
+  const [isMessagesLoading, setIsMessagesLoading] = useState<boolean>(false);
+
+  // Attach Sockets Hook
+  useChatSockets({ setChats, setActiveChatId, setMessages });
+
+  // 1. Fetch Chats
+  const fetchChats = useCallback(async () => {
+    setIsChatsLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/chat', {
-        method: 'GET',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (res.ok && data.chats) {
-        setChats(data.chats);
-        if (data.chats.length > 0 && !activeChatId) {
-          setActiveChatId(data.chats[0]._id);
-        }
-      }
+      const data = await chatService.getUserChats();
+      setChats(data);
     } catch (err) {
       console.error('Failed to fetch chats:', err);
+    } finally {
+      setIsChatsLoading(false);
     }
-  };
+  }, []);
 
-  // Fetch messages
-  const fetchMessages = async (chatId: string) => {
+  // 2. Fetch Messages
+  const fetchMessages = useCallback(async (chatId: string) => {
+    setIsMessagesLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/chat/${chatId}/messages`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (res.ok && data.messages) {
-        setMessages(data.messages);
-      }
+      const data = await chatService.getChatMessages(chatId);
+      setMessages(data);
     } catch (err) {
-      console.error('Failed to fetch messages:', err);
+      console.error(`Failed to load messages:`, err);
+    } finally {
+      setIsMessagesLoading(false);
+    }
+  }, []);
+
+  // 3. Lazy New Chat (Local Action)
+  const startNewChat = () => {
+    if (activeChatId === null && messages.length === 0) return;
+    setActiveChatId(null);
+    setMessages([]);
+  };
+
+  // 4. Delete Chat
+  const deleteChat = async (chatId: string): Promise<boolean> => {
+    try {
+      await chatService.deleteChatApi(chatId);
+      setChats((prev) => prev.filter((c) => c._id !== chatId));
+      if (activeChatId === chatId) startNewChat();
+      return true;
+    } catch (err) {
+      return false;
     }
   };
 
+  // 5. Edit Message
+  const editMessage = async (messageId: string, newContent: string): Promise<boolean> => {
+    if (!activeChatId) return false;
+    try {
+      await chatService.editMessageApi(activeChatId, messageId, newContent);
+      setMessages((prev) =>
+        prev.map((m) => (m._id === messageId || m.id === messageId ? { ...m, content: newContent } : m))
+      );
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  //   Move Chat to Top (Wrapped with useCallback for performance)
+  const moveChatToTop = useCallback((chatId: string) => {
+    setChats((prevChats) => {
+      const existingChatIndex = prevChats.findIndex((c) => c._id === chatId);
+
+      if (existingChatIndex === -1) return prevChats;
+
+      const targetChat = prevChats[existingChatIndex];
+      const updatedChats = prevChats.filter((c) => c._id !== chatId);
+
+      return [targetChat, ...updatedChats];
+    });
+  }, []);
+
+  // Active Chat Trigger
   useEffect(() => {
-    if (activeChatId) {
-      fetchMessages(activeChatId);
-    }
-  }, [activeChatId]);
+    if (activeChatId) fetchMessages(activeChatId);
+    else setMessages([]);
+  }, [activeChatId, fetchMessages]);
 
-  // Create New Chat
-  const createNewChat = async () => {
-    try {
-      const res = await fetch('http://localhost:3000/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ title: 'New Chat' }),
-      });
-      const data = await res.json();
-      if (res.ok && data.chat) {
-        setChats((prev) => [data.chat, ...prev]);
-        setActiveChatId(data.chat._id);
-        setMessages([]); // Clear previous messages for new chat
-      }
-    } catch (err) {
-      console.error('Failed to create chat:', err);
-    }
-  };
-
-  const deleteChat = async (chatId: string) => {
-    try {
-      const res = await fetch(`http://localhost:3000/api/chat/${chatId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        setChats((prev) => {
-          const updatedChats = prev.filter((c) => c._id !== chatId);
-          
-          if (activeChatId === chatId) {
-            setActiveChatId(updatedChats.length > 0 ? updatedChats[0]._id : null);
-          }
-          
-          return updatedChats;
-        });
-      }
-    } catch (err) {
-      console.error('Failed to delete chat:', err);
-    }
-  };
-
+  // Initial Load
   useEffect(() => {
     fetchChats();
-
-    const handleChatUpdated = ({ chatId, title }: { chatId: string; title: string }) => {
-      setChats((prev) =>
-        prev.map((c) => (c._id === chatId ? { ...c, title } : c))
-      );
-    };
-
-    const handleAiResponseChunk = ({ chat, content }: { chat: string; content: string }) => {
-      setMessages((prev) => {
-        const lastMsg = prev[prev.length - 1];
-
-        if (lastMsg && lastMsg.role === 'model') {
-          return [
-            ...prev.slice(0, -1),
-            { ...lastMsg, content: lastMsg.content + content }
-          ];
-        } else {
-          return [
-            ...prev,
-            { role: 'model', content }
-          ];
-        }
-      });
-    };
-
-    // Socket Event Listeners
-    socket.on('chat-updated', handleChatUpdated);
-    socket.on('ai-response-chunk', handleAiResponseChunk);
-
-    return () => {
-      socket.off('chat-updated', handleChatUpdated);
-      socket.off('ai-response-chunk', handleAiResponseChunk);
-    };
-  }, []);
+  }, [fetchChats]);
 
   return (
     <ChatContext.Provider
@@ -157,22 +106,18 @@ export const ChatProvider = (props: { children: React.ReactNode }) => {
         chats,
         activeChatId,
         messages,
-        setMessages,
+        isChatsLoading,
+        isMessagesLoading,
         setActiveChatId,
-        createNewChat,
+        setMessages,
         fetchChats,
+        startNewChat,
         deleteChat,
+        editMessage,
+        moveChatToTop,
       }}
     >
-      {props.children}
+      {children}
     </ChatContext.Provider>
   );
-};
-
-export const useChat = () => {
-  const context = useContext(ChatContext);
-  if (!context) {
-    throw new Error('useChat must be used inside ChatProvider');
-  }
-  return context;
 };

@@ -1,222 +1,179 @@
-import { PanelLeft, PanelLeftOpen, PanelLeftClose, SquarePen, User, Settings, Trash2, LogOut, Sun, Moon, Search } from 'lucide-react';
-import { useState, useEffect } from "react";
-import { useChat } from "../../context/ChatContext";
-import { useAuth } from "../../context/AuthContext";
-import { useAppContext } from '../../context/AppContext';
-import SettingsModal from '../settings/SettingsModal';
+import React, { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useChat } from "../../hooks/useChat";
 
-const Sidebar = () => {
-    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+import SidebarHeader from './SidebarHeader';
+import SidebarSearch from './SidebarSearch';
+import ChatItem from './ChatItem';
+import SidebarFooter from './SidebarFooter';
+import { useNavigate } from 'react-router-dom';
+
+interface SidebarProps {
+    isMobileOpen?: boolean;
+    onMobileClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onMobileClose }) => {
     const [isOpen, setIsOpen] = useState(true);
-    const [isHovered, setIsHovered] = useState(false);
-    const { theme, toggleTheme } = useAppContext();
     const [searchQuery, setSearchQuery] = useState("");
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isCreatingChat, setIsCreatingChat] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
+    const navigate = useNavigate();
 
-    const { chats, activeChatId, setActiveChatId, createNewChat, fetchChats, deleteChat } = useChat();
-    const { user, logout } = useAuth();
+    const {
+        chats = [],
+        activeChatId,
+        setActiveChatId,
+        startNewChat,
+        fetchChats,
+        deleteChat
+    } = useChat();
+
+    // Unified Chat Selection with Route Navigation
+    const handleSelectChat = (chatId: string) => {
+        if (setActiveChatId) setActiveChatId(chatId);
+        navigate(`/c/${chatId}`);
+        if (onMobileClose) onMobileClose();
+    };
 
     useEffect(() => {
-        fetchChats();
+        const loadChats = async () => {
+            try {
+                setIsFetching(true);
+                if (fetchChats) await fetchChats();
+            } catch (error) {
+                console.error("Failed to fetch chats:", error);
+            } finally {
+                setIsFetching(false);
+            }
+        };
+
+        loadChats();
     }, []);
 
+    // Reset activeChatId + Navigate to '/'
     const handleNewChat = async () => {
-        await createNewChat();
+        if (isCreatingChat) return;
+        try {
+            setIsCreatingChat(true);
+
+            // 1. Active Chat ID ko null reset karein (Sabse zaroori fix)
+            if (setActiveChatId) {
+                setActiveChatId(null);
+            }
+
+            // 2. Clear new chat session (agar hook backend call karta ho)
+            if (startNewChat) {
+                await startNewChat();
+            }
+
+            // 3. Home Route (blank chat window) par navigate karein
+            navigate('/');
+
+            if (onMobileClose) onMobileClose();
+        } catch (error) {
+            console.error("Failed to create new chat:", error);
+        } finally {
+            setIsCreatingChat(false);
+        }
     };
 
-    const handleSelectChat = (chatId: string) => {
-        setActiveChatId(chatId);
-    };
-
+    //  Handle active chat redirection if active chat is deleted
     const handleDeleteChat = async (e: React.MouseEvent, chatId: string) => {
         e.stopPropagation();
-        await deleteChat(chatId);
+        try {
+            if (deleteChat) {
+                await deleteChat(chatId);
+                if (activeChatId === chatId) {
+                    if (setActiveChatId) setActiveChatId(null);
+                    navigate('/');
+                }
+            }
+        } catch (error) {
+            console.error("Failed to delete chat:", error);
+        }
     };
 
-    const getToggleIcon = () => {
-        if (isHovered) { return isOpen ? <PanelLeftClose size={19} /> : <PanelLeftOpen size={19} /> }
-        return !isOpen ? <img src="/HyperAILogo.jpg" alt="Logo" className="w-[19px] object-contain rounded-xl" /> : <PanelLeft size={19} />;
-    }
-
-    const userName = user?.fullName?.firstName
-        ? user.fullName.firstName
-        : user?.email || "User";
-
-    // Search Filter
-    const filteredChats = chats.filter((chat) =>
-        chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
+    const safeChatsList = Array.isArray(chats) ? chats : [];
+    const filteredChats = safeChatsList.filter((chat) =>
+        chat?.title?.toLowerCase().includes((searchQuery || "").toLowerCase())
     );
 
     return (
-        <aside className={`flex flex-col justify-between border-r border-(--border) bg-(--sidebar) transition-all duration-300 ease-in-out ${isOpen ? 'w-65 p-3' : 'w-16 p-3 items-center'}`}>
-
-            {/* Top Section */}
-            <div className='flex flex-col gap-5 mb-4.5'>
-                <div className='flex justify-between items-center'>
-                    {isOpen && <span className="font-medium cursor-pointer text-(--text)">HyperAI</span>}
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => setIsHovered(false)}
-                        className="text-(--text) hover:bg-(--border) cursor-pointer rounded-full transition-colors p-2"
-                        title="Toggle Sidebar"
-                    >
-                        {getToggleIcon()}
-                    </button>
-                </div>
-
-                <button
-                    onClick={handleNewChat}
-                    className={`flex gap-3 items-center w-full rounded-lg cursor-pointer text-(--text) transition-colors ${isOpen ? 'px-3 py-2 bg-[var(--card)] hover:bg-[var(--border)]' : 'p-2 hover:bg-[var(--card)]'}`}
-                >
-                    <SquarePen size={18} />
-                    {isOpen && <span className="text-sm font-medium">New chat</span>}
-                </button>
-            </div>
-
-            {/* Search Input - Hidden when closed */}
-            {isOpen && (
-                <div className="relative mb-3">
-                    <Search
-                        size={18}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Search chats..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-1.5 rounded-lg text-sm bg-[var(--card)]  text-[var(--foreground)] placeholder:text-[var(--muted)] outline-none transition"
-                    />
-                </div>
+        <>
+            {/* Simple Backdrop without blur */}
+            {isMobileOpen && (
+                <div
+                    onClick={onMobileClose}
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+                />
             )}
 
-            {/* Chat List */}
-            <div id='recentChat' className="w-full space-y-2 h-full rounded-lg overflow-auto">
-                {isOpen && (
-                    <div className="mt-2 space-y-3">
-                        <p className="px-3 text-sm font-semibold text-gray-500">Recent</p>
-                        <div className="space-y-1">
-                            {/* 2. Filtered Chats Mapped Here */}
-                            {filteredChats.map((chat) => (
-                                <div
-                                    key={chat._id}
-                                    onClick={() => handleSelectChat(chat._id)}
-                                    className={`group flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg truncate cursor-pointer transition-colors ${activeChatId === chat._id
-                                        ? 'bg-(--border) text-(--text) font-medium'
-                                        : 'text-(--text) hover:bg-(--card)'
-                                        }`}
-                                >
-                                    <span className="truncate">{chat.title || "Untitled Chat"}</span>
-                                    <button
-                                        onClick={(e) => handleDeleteChat(e, chat._id)}
-                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1 transition-opacity cursor-pointer"
-                                        title="Delete Chat"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+            {/* Sidebar Shell */}
+            <aside className={`
+                flex flex-col justify-between border-r border-(--border) bg-(--background)
+                transition-all duration-300 ease-in-out z-50 h-full
+                
+                ${isMobileOpen ? 'fixed inset-y-0 left-0 w-72 p-3 flex shadow-2xl z-50' : ''}
+                ${!isMobileOpen && (isOpen ? 'w-65 p-3' : 'w-16 p-3 items-center')}
+            `}>
+
+                {/* Top Section */}
+                <SidebarHeader
+                    isOpen={isOpen || isMobileOpen}
+                    onToggle={() => setIsOpen(!isOpen)}
+                    onNewChat={handleNewChat}
+                    isCreating={isCreatingChat}
+                    onMobileClose={onMobileClose}
+                />
+
+                {/* Search Input */}
+                <SidebarSearch
+                    isOpen={isOpen || isMobileOpen}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                />
+
+                {/* Chat List */}
+                <div id="recentChat" className="w-full flex-1 my-3 rounded-lg overflow-y-auto">
+                    {(isOpen || isMobileOpen) && (
+                        <div className="space-y-2">
+                            <p className="px-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Recent</p>
+
+                            {isFetching ? (
+                                <div className="flex items-center justify-center py-6 text-zinc-400 gap-2 text-xs">
+                                    <Loader2 size={16} className="animate-spin" />
+                                    <span>Loading chats...</span>
                                 </div>
-                            ))}
+                            ) : (
+                                <div className="space-y-1">
+                                    {filteredChats.length === 0 ? (
+                                        <p className="px-2 text-xs text-zinc-500 italic py-2">
+                                            {searchQuery ? "No matching chats" : "No recent chats"}
+                                        </p>
+                                    ) : (
+                                        filteredChats.map((chat) => (
+                                            <ChatItem
+                                                key={chat._id}
+                                                chat={chat}
+                                                isActive={activeChatId === chat._id}
+                                                onSelect={handleSelectChat}
+                                                onDelete={handleDeleteChat}
+                                            />
+                                        ))
+                                    )}
+                                </div>
+                            )}
                         </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Bottom Section: User Profile & Styled Buttons */}
-            <div className='flex flex-col gap-2 mt-3 mb-1 transition-all duration-300 ease-in-out'>
-                <div className={`flex items-center justify-between w-full ${!isOpen && 'flex-col gap-3'}`}>
-
-                    {/* User Profile */}
-                    <div className={`flex items-center gap-3 ${!isOpen && 'justify-center'}`}>
-                        {user?.avatar ? (
-                            <img
-                                src={user.avatar}
-                                alt="Profile"
-                                className="w-8 h-8 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">
-                                {user?.fullName?.firstName[0]}
-                            </div>
-                        )}
-                        {isOpen && <span className='text-sm cursor-pointer truncate max-w-[120px] text-[var(--text)]'>
-                            {userName}
-                            <p className="text-[10px] text-emerald-400 flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                Online
-                            </p>
-                        </span>}
-
-                    </div>
-
-                    {/* Styled Action Buttons */}
-                    <div className={`flex items-center ${isOpen ? 'gap-1' : 'flex-col gap-2'}`}>
-
-                        <button
-                            onClick={toggleTheme}
-                            title="Toggle Theme"
-                            className="flex items-center text-[var(--text)] hover:bg-[var(--border)] rounded-full p-1.5 transition-colors cursor-pointer"
-                        >
-                            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                        </button>
-
-                        {isOpen && (
-                            <button
-                                onClick={() => setIsSettingsOpen(true)}
-                                title="Settings"
-                                className={`flex items-center text-[var(--text)] hover:bg-[var(--border)] rounded-full p-1.5 transition-colors cursor-pointer ${!isOpen && 'hidden'}`}
-                            >
-                                <Settings size={16} />
-                            </button>
-                        )}
-
-                        <button
-                            onClick={() => setIsLogoutModalOpen(true)}
-                            title="Logout"
-                            className="flex items-center text-[var(--text)] hover:bg-[var(--border)] hover:text-red-500 rounded-full p-1.5 transition-colors cursor-pointer"
-                        >
-                            <LogOut size={16} />
-                        </button>
-                    </div>
+                    )}
                 </div>
-            </div>
 
-            <SettingsModal
-                isOpen={isSettingsOpen}
-                onClose={() => setIsSettingsOpen(false)}
-                user={user}
-            />
+                {/* Bottom Section */}
+                <SidebarFooter isOpen={isOpen || isMobileOpen} />
 
-            {/* Custom Logout Confirmation Modal */}
-            {isLogoutModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-all">
-                    <div className="bg-[var(--background)] text-[var(--text)] border border-[var(--border)] rounded-xl w-full max-w-sm p-6 relative shadow-2xl">
-                        <h2 className="text-xl font-semibold mb-2">Confirm Logout</h2>
-                        <p className="text-sm text-gray-500 mb-6">Are you sure you want to log out of your account?</p>
-
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setIsLogoutModalOpen(false)}
-                                className="px-4 py-2 rounded-md hover:bg-[var(--sidebar)] transition-colors text-sm font-medium cursor-pointer border border-[var(--border)] text-[var(--text)]"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setIsLogoutModalOpen(false);
-                                    logout();
-                                }}
-                                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm font-medium cursor-pointer"
-                            >
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-        </aside>
+            </aside>
+        </>
     );
 };
 
-export default Sidebar;                               
+export default Sidebar;

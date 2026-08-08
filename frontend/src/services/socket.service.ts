@@ -1,11 +1,15 @@
 import { io, Socket } from "socket.io-client";
 
-export const socket: Socket = io("http://localhost:3000", {
+
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '');
+
+export const socket: Socket = io(BACKEND_URL, {
   withCredentials: true,
   transports: ["websocket", "polling"],
   autoConnect: true,
 });
 
+// Indicator for connection status
 socket.on("connect", () => {
   console.log("🟢 SOCKET CONNECTED! ID:", socket.id);
 });
