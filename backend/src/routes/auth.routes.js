@@ -90,7 +90,8 @@ router.get(
 
 router.get('/google/callback', (req, res, next) => {
     passport.authenticate('google', { session: false }, (err, user, info) => {
-        const frontendUrl = getFrontendUrl();
+        // Fallback domain safely handled
+        const frontendUrl = process.env.FRONTEND_URL || 'https://hyperai-psi.vercel.app';
 
         if (err) {
             console.error('Passport Auth Error:', err);
@@ -100,8 +101,9 @@ router.get('/google/callback', (req, res, next) => {
             console.error('No user returned from Google strategy:', info);
             return res.redirect(`${frontendUrl}/login?error=no_user`);
         }
+
         req.user = user;
-        return authController.googleCallbackController(req, res);
+        return authController.googleCallbackController(req, res, next);
     })(req, res, next);
 });
 

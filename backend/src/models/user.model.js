@@ -16,7 +16,12 @@ const userSchema = new mongoose.Schema(
         fullName: {
             firstName: {
                 type: String,
-                required: [true, 'First name is required'],
+                required: [
+                    function () {
+                        return !this.googleId; // Agar googleId nahi hai tabhi required hoga
+                    },
+                    'First name is required',
+                ],
                 trim: true,
             },
             lastName: {
@@ -50,11 +55,11 @@ const userSchema = new mongoose.Schema(
             type: Date,
             select: false,
         },
-        resetPasswordToken: { 
+        resetPasswordToken: {
             type: String,
             select: false, // Added for security
         },
-        resetPasswordExpires: { 
+        resetPasswordExpires: {
             type: Date,
             select: false, // Added for security
         }

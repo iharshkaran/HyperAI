@@ -12,7 +12,8 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback', // Relative path works automatically for both Localhost & Render
+      // Explicitly pick environment variable callback URL if present
+      callbackURL: process.env.GOOGLE_CALLBACK_URL || 'https://hyperai-mt79.onrender.com/api/auth/google/callback',
       proxy: true, // Crucial for Render / reverse proxies
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -41,7 +42,6 @@ passport.use(
             },
             avatar,
             isVerified: true, // Google verified emails are trusted
-            password: `google_oauth_${profile.id}`, // Placeholder password
           });
         } else {
           // Link googleId and update avatar if existing account found
@@ -58,12 +58,13 @@ passport.use(
           }
 
           if (isUpdated) {
-            await user.save();
+            await user.save({ validateBeforeSave: false }); // Skip validation on updates
           }
         }
 
         return done(null, user);
       } catch (err) {
+        console.error('Google OAuth Strategy Error:', err); // Detailed log for debugging
         return done(err, null);
       }
     }
