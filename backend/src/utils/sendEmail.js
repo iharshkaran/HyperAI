@@ -22,7 +22,7 @@
 //             <tr>
 //               <td align="left">
 //                 <table role="presentation" width="100%" style="max-width: 480px; margin: 0 auto; padding: 0;">
-                  
+
 //                   <!-- Brand Header -->
 //                   <tr>
 //                     <td style="padding-bottom: 24px;">
@@ -100,7 +100,7 @@
 //             <tr>
 //               <td align="left">
 //                 <table role="presentation" width="100%" style="max-width: 480px; margin: 0 auto; padding: 0;">
-                  
+
 //                   <!-- Brand Header-->
 //                   <tr>
 //                     <td style="padding-bottom: 24px;">
@@ -168,28 +168,27 @@
 // };
 
 
-
 import 'dotenv/config';
 import nodemailer from 'nodemailer';
 
-// Transporter Config using Google OAuth2
+// Brevo SMTP Transporter (Port 465 SSL for Render Compatibility)
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp-relay.brevo.com',
+  port: 587,
   auth: {
-    type: 'OAuth2',
-    user: process.env.EMAIL_USER,
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    refreshToken: process.env.REFRESH_TOKEN,
+    user: process.env.BREVO_SMTP_USER, // Tumhara Brevo login email
+    pass: process.env.BREVO_SMTP_KEY,  // Generate ki hui xsmtpsib-... key
   },
 });
 
+// Sender email fallback
+const SENDER_EMAIL = process.env.EMAIL_USER || process.env.BREVO_SMTP_USER;
+
 // 1. Send OTP Email
 export const sendOTPEmail = async (toEmail, otp) => {
-  console.log("Client ID:", process.env.GOOGLE_CLIENT_ID);
   try {
     const mailOptions = {
-      from: `"HyperAI" <${process.env.EMAIL_USER}>`,
+      from: `"HyperAI" <${SENDER_EMAIL}>`,
       to: toEmail,
       subject: `${otp} is your HyperAI verification code`,
       html: `
@@ -251,7 +250,9 @@ export const sendOTPEmail = async (toEmail, otp) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    console.log("OTP Email Sent Successfully:", info.messageId);
+    return info;
   } catch (error) {
     console.error("Error sending OTP email:", error);
     throw new Error("Failed to send verification email");
@@ -262,7 +263,7 @@ export const sendOTPEmail = async (toEmail, otp) => {
 export const sendResetPasswordEmail = async (toEmail, resetUrl) => {
   try {
     const mailOptions = {
-      from: `"HyperAI" <${process.env.EMAIL_USER}>`,
+      from: `"HyperAI" <${SENDER_EMAIL}>`,
       to: toEmail,
       subject: "Reset your HyperAI password",
       html: `
@@ -332,7 +333,9 @@ export const sendResetPasswordEmail = async (toEmail, resetUrl) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Reset Password Email Sent Successfully:", info.messageId);
+    return info;
   } catch (error) {
     console.error("Error sending Reset Password email:", error);
     throw new Error("Failed to send password reset email");
