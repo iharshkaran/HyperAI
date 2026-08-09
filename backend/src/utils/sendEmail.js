@@ -171,13 +171,14 @@
 import 'dotenv/config';
 import nodemailer from 'nodemailer';
 
-// Brevo SMTP Transporter (Port 465 SSL for Render Compatibility)
+
 const transporter = nodemailer.createTransport({
   host: 'smtp-relay.brevo.com',
   port: 587,
+  secure: false,
   auth: {
-    user: process.env.BREVO_SMTP_USER, // Tumhara Brevo login email
-    pass: process.env.BREVO_SMTP_KEY,  // Generate ki hui xsmtpsib-... key
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_KEY,
   },
 });
 
