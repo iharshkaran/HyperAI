@@ -47,7 +47,7 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-(--background) text-(--text1) font-sans relative">
+        <div className="flex h-dvh w-screen overflow-hidden bg-(--background) text-(--text1) font-sans relative">
 
             {/* 1. SINGLE FLOATING ACTION PILL (Mobile Only) */}
             <div className="md:hidden fixed top-3 left-3 z-30 flex items-center gap-1 p-1 py-0 rounded-full bg-(--card)/80 backdrop-blur-md border border-(--border) shadow-md">

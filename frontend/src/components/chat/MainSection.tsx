@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { socket } from '../../services/socket.service';
 import { useChat } from '../../hooks/useChat';
 import api from '../../services/api';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import WelcomeScreen from './WelcomeScreen';
 import { ChatHeader } from './ChatHeader';
@@ -11,21 +11,21 @@ import { TypingIndicator } from './TypingIndicator';
 import { ChatInput } from './ChatInput';
 
 const MainSection = () => {
-  const location = useLocation();
-  const [isFetchingHistory, setIsFetchingHistory] = useState(() => location.pathname.includes('/c/'));
+  const { chatId: routeChatId } = useParams<{ chatId: string }>(); // 🟢 URL se seedha, race-free
+  const [isFetchingHistory, setIsFetchingHistory] = useState(() => !!routeChatId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isLoadingRef = useRef(false); // Added missing ref
+  const isLoadingRef = useRef(false);
   const navigate = useNavigate();
 
   const { activeChatId, setActiveChatId, fetchChats, moveChatToTop } = useChat() as any;
-  const justCreatedRef = useRef(false);
+  const justCreatedChatIdRef = useRef<string | null>(null); // 🟢 boolean ki jagah actual ID store karo
+  const skipSmoothScrollRef = useRef(false);
 
-  // Helper to keep ref and state in sync
   const setLoadingState = (state: boolean) => {
     setIsLoading(state);
     isLoadingRef.current = state;
@@ -36,21 +36,17 @@ const MainSection = () => {
     let queue = '';
     let activeMsgId = '';
     let animationFrameId: number;
-    let checkCompletionInterval: ReturnType<typeof setInterval>; // Added missing interval tracker
+    let checkCompletionInterval: ReturnType<typeof setInterval>;
     let lastUpdate = Date.now();
 
-    // Throttle the rendering of incoming chunks to avoid excessive re-renders
     const renderLoop = () => {
       const now = Date.now();
 
-
-      // If there's an active message and enough time has passed, append queued chunks to the message content
       if (queue.length > 0 && activeMsgId && now - lastUpdate > 40) {
         const takeCount = queue.length > 60 ? 10 : queue.length > 20 ? 4 : 2;
         const charsToAppend = queue.slice(0, takeCount);
         queue = queue.slice(takeCount);
 
-        // Update the message content in state
         setMessages((prev) =>
           prev.map((m) =>
             m.id === activeMsgId || m._id === activeMsgId
@@ -67,19 +63,13 @@ const MainSection = () => {
 
     animationFrameId = requestAnimationFrame(renderLoop);
 
-
-    // Socket Event Handlers
     const handleChatCreated = (data: { chatId: string; title: string }) => {
-      justCreatedRef.current = true;
+      justCreatedChatIdRef.current = data.chatId; // 🟢 actual ID store karo
       if (setActiveChatId) setActiveChatId(data.chatId);
       if (fetchChats) fetchChats();
       navigate(`/c/${data.chatId}`, { replace: true });
     };
 
-
-
-
-    // Handle incoming AI response chunks
     const handleAiResponseChunk = (data: { chat: string; chunk: string }) => {
       setLoadingState(false);
 
@@ -87,7 +77,6 @@ const MainSection = () => {
         moveChatToTop(data.chat);
       }
 
-      // If there's no active message, create a new one with a temporary ID
       if (!activeMsgId) {
         const newMsgId = Date.now().toString();
         activeMsgId = newMsgId;
@@ -106,7 +95,6 @@ const MainSection = () => {
       }
     };
 
-    // Handle the end of an AI response
     const handleAiResponseEnd = () => {
       if (fetchChats) fetchChats();
 
@@ -118,14 +106,11 @@ const MainSection = () => {
       }, 50);
     };
 
-    // Handle AI errors
     const handleAiError = (data: { message: string }) => {
       console.error('AI Error:', data.message);
       setLoadingState(false);
     };
 
-
-    // Handle when a user message is saved and update the message ID in state
     const handleUserMessageSaved = (data: { clientId: string; messageId: string; chatId: string }) => {
       setMessages((prev) =>
         prev.map((m) =>
@@ -134,14 +119,11 @@ const MainSection = () => {
       );
     };
 
-    // Handle when a message is updated (edited) and update the content in state
     const handleMessageUpdated = (data: { messageId: string; chatId: string; newContent?: string; editCount?: number }) => {
       setMessages((prev) => {
         const editIndex = prev.findIndex((m) => String(m._id || m.id) === String(data.messageId));
         if (editIndex === -1) return prev;
 
-
-        // Update the message content and edit count in state
         const updatedList = prev.slice(0, editIndex + 1);
         updatedList[editIndex] = {
           ...updatedList[editIndex],
@@ -153,8 +135,6 @@ const MainSection = () => {
       });
     };
 
-
-    // Register socket event listeners
     socket.on('chat-created', handleChatCreated);
     socket.on('ai-response-chunk', handleAiResponseChunk);
     socket.on('ai-response-end', handleAiResponseEnd);
@@ -162,7 +142,6 @@ const MainSection = () => {
     socket.on('user-message-saved', handleUserMessageSaved);
     socket.on('message-updated', handleMessageUpdated);
 
-    // Cleanup function to remove event listeners and cancel animation frame on unmount
     return () => {
       cancelAnimationFrame(animationFrameId);
       if (checkCompletionInterval) clearInterval(checkCompletionInterval);
@@ -176,42 +155,32 @@ const MainSection = () => {
     };
   }, [setActiveChatId, fetchChats, moveChatToTop, navigate]);
 
-
-  // if the active chat changes, reset the input field
   useEffect(() => {
     setInput('');
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Height reset karne ke liye
+      textareaRef.current.style.height = 'auto';
     }
-  }, [activeChatId]);
+  }, [routeChatId]);
 
-
-
-  // 2. Fetch Chat History
-
+  // 2. Fetch Chat History — routeChatId (useParams) pe depend karta hai, koi race nahi
   useEffect(() => {
-    if (!activeChatId) {
-      // Agar hum actual /c/ route par hain lekin ID abhi load nahi hui, toh spinner dikhao
-      if (location.pathname.includes('/c/')) {
-        setIsFetchingHistory(true);
-      } else {
-        setMessages([]);
-        setIsFetchingHistory(false);
-      }
+    if (!routeChatId) {
+      setMessages([]);
+      setIsFetchingHistory(false);
       return;
     }
 
-    if (justCreatedRef.current) {
-      justCreatedRef.current = false;
+    // Agar yeh chat abhi-abhi isi session mein create hua tha, fetch skip karo
+    if (justCreatedChatIdRef.current === routeChatId) {
+      justCreatedChatIdRef.current = null;
+      setIsFetchingHistory(false);
       return;
     }
-
-
 
     const loadChatMessages = async () => {
       setIsFetchingHistory(true);
       try {
-        const res = await api.get(`/chats/${activeChatId}/messages`);
+        const res = await api.get(`/chats/${routeChatId}/messages`);
         if (res.data?.messages) {
           const loadedMessages = res.data.messages.map((m: any) => ({
             id: m._id,
@@ -230,7 +199,7 @@ const MainSection = () => {
     };
 
     loadChatMessages();
-  }, [activeChatId, location.pathname]); // location.pathname dependency mein add karo
+  }, [routeChatId]);
 
   // 3. Smart Auto Scroll
   const isUserScrollingRef = useRef(false);
@@ -243,7 +212,9 @@ const MainSection = () => {
 
   useEffect(() => {
     if (scrollRef.current && !isUserScrollingRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+      const behavior: ScrollBehavior = skipSmoothScrollRef.current ? 'auto' : 'smooth';
+      scrollRef.current.scrollIntoView({ behavior });
+      skipSmoothScrollRef.current = false;
     }
   }, [messages, isLoading]);
 
@@ -253,6 +224,10 @@ const MainSection = () => {
 
     const textToSend = customText || input;
     if (!textToSend.trim() || isLoadingRef.current) return;
+
+    if (messages.length === 0) {
+      skipSmoothScrollRef.current = true;
+    }
 
     const tempId = Date.now().toString();
 
@@ -276,7 +251,7 @@ const MainSection = () => {
     }
 
     socket.emit('ai-message', {
-      chat: activeChatId || null,
+      chat: routeChatId || null,
       content: textToSend,
       clientId: tempId,
     });
@@ -305,7 +280,7 @@ const MainSection = () => {
     }
 
     socket.emit('ai-message', {
-      chat: activeChatId || null,
+      chat: routeChatId || null,
       messageId,
       content: newContent,
     });
@@ -313,8 +288,7 @@ const MainSection = () => {
 
   const lastUserIndex = messages.findLastIndex((m) => m.role === 'user');
 
-   return (
-    // FIX 1: h-screen ki jagah h-[100dvh] lagaya
+  return (
     <div className="flex-1 flex flex-col h-dvh text-(--text1) overflow-hidden">
       <ChatHeader />
 
