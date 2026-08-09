@@ -76,62 +76,6 @@ console.log("5");
 
  
 // VERIFY OTP CONTROLLER
-export async function verifyOTPController(req, res) {
-  try {
-    const { email, otp } = req.body;
-
-    if (!email || !otp) {
-      return res.status(400).json({ message: 'Email and OTP are required' });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // Fetch +otp +otpExpires explicitly because of select: false in schema
-    const user = await User.findOne({ email: normalizedEmail }).select('+otp +otpExpires');
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: 'User is already verified' });
-    }
-
-    if (!user.otp || !user.otpExpires || Date.now() > user.otpExpires) {
-      return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
-    }
-
-    if (user.otp !== otp.trim()) {
-      return res.status(400).json({ message: 'Invalid OTP code' });
-    }
-
-    // Mark User as Verified & Clear OTP
-    user.isVerified = true;
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
-
-    // AUTO-LOGIN
-    const token = generateToken(user._id);
-    setTokenCookie(res, token);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Email verified successfully!',
-      token,
-      user: {
-        _id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        avatar: user.avatar,
-        isVerified: user.isVerified,
-      },
-    });
-  } catch (err) {
-    console.error('Verify OTP Error:', err);
-    return res.status(500).json({ message: 'Failed to verify OTP' });
-  }
-}
 
 
 // RESEND OTP CONTROLLER
@@ -306,7 +250,7 @@ export async function googleCallbackController(req, res) {
     );
 
     // Redirect to frontend auth-success page
-    return res.redirect(`${frontendUrl}/auth-success?user=${userPayload}`);
+    return res.redirect(`${frontendUrl}/auth-success?token=${token}&user=${userPayload}`);
   } catch (error) {
     console.error('Google Auth Controller Error:', error);
     return res.redirect(`${frontendUrl}/login?error=google_failed`);

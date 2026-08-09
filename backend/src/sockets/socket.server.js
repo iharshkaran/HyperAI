@@ -17,16 +17,22 @@ function socketServer(httpServer) {
 
     // Authentication Middleware
     io.use(async (socket, next) => {
-        const rawCookies = socket.handshake.headers.cookie || "";
-
-        const cookies = cookie.parseCookie(rawCookies);
-
-        if (!cookies.token) {
-            return next(new Error("Authentication error: No token provided"));
-        }
-
         try {
-            const decoded = jwt.verify(cookies.token, process.env.JWT_SECRET);
+            // 1. try to get token from cookies first
+            const rawCookies = socket.handshake.headers.cookie || "";
+            const cookies = cookie.parseCookie(rawCookies);
+            let token = cookies.token;
+
+            // 2. if not found in cookie then check handshake auth
+            if (!token) {
+                token = socket.handshake.auth?.token;
+            }
+
+            if (!token) {
+                return next(new Error("Authentication error: No token provided"));
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
             const userId = decoded._id || decoded.id || decoded.userId;
             const user = await User.findById(userId);
             if (!user) return next(new Error("User not found"));
@@ -43,12 +49,10 @@ function socketServer(httpServer) {
     io.on("connection", (socket) => {
         console.log(`Connected: ${socket.id} | User: ${socket.user._id}`);
 
-        // AI Message Event Listener
         socket.on("ai-message", (messagePayload) => {
             handleAiMessage(socket, messagePayload);
         });
 
-        // Disconnect Handler
         socket.on("disconnect", () => {
             console.log(`Disconnected: ${socket.id}`);
         });

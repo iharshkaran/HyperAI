@@ -3,8 +3,16 @@ import jwt from 'jsonwebtoken';
 
 export const authUser = async (req, res, next) => {
     try {
-        // Extract Token
+        // 1. Try to get token from cookies first
         let token = req.cookies?.token;
+
+        // 2. if not found in cookie then check Authorization header
+        if (!token) {
+            const authHeader = req.headers.authorization; // "Bearer eyJhbGci..."
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.split(' ')[1]; // Remove "Bearer " to get the actual token
+            }
+        }
 
         if (!token) {
             return res.status(401).json({ message: 'Unauthorized: No token provided' });
@@ -17,14 +25,11 @@ export const authUser = async (req, res, next) => {
         const userId = decoded._id || decoded.id || decoded.userId;
         const user = await User.findById(userId);
 
-        // If User Not Found
         if (!user) {
             return res.status(401).json({ message: 'Unauthorized: User no longer exists' });
         }
 
-        // Attach User to Request Object
         req.user = user;
-
         next();
     } catch (err) {
         console.error('Auth Middleware Error:', err.message);
