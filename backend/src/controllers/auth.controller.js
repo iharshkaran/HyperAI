@@ -16,7 +16,7 @@ export async function registerController(req, res) {
     if (!finalFirstName || !email || !password) {
       return res.status(400).json({ message: 'First name, email, and password are required' });
     }
-     
+
     console.log("1");
 
     if (password.length < 8) {
@@ -31,7 +31,7 @@ export async function registerController(req, res) {
     if (user && user.isVerified) {
       return res.status(400).json({ message: 'User already exists. Please login.' });
     }
-console.log("2");
+    console.log("2");
     // Generate OTP and set expiration
     const generatedOTP = crypto.randomInt(100000, 999999).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes validity
@@ -39,7 +39,7 @@ console.log("2");
     // password hashing
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
-console.log("3");
+    console.log("3");
     if (user && !user.isVerified) {
       // Unverified user update
       user.fullName = { firstName: finalFirstName, lastName: finalLastName };
@@ -62,7 +62,7 @@ console.log("3");
 
     // Send Email
     await sendOTPEmail(normalizedEmail, generatedOTP);
-console.log("5");
+    console.log("5");
     return res.status(200).json({
       success: true,
       message: 'OTP sent to your email successfully!',
@@ -74,9 +74,64 @@ console.log("5");
   }
 }
 
- 
-// VERIFY OTP CONTROLLER
 
+// VERIFY OTP CONTROLLER
+export async function verifyOTPController(req, res) {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Fetch +otp +otpExpires explicitly because of select: false in schema
+    const user = await User.findOne({ email: normalizedEmail }).select('+otp +otpExpires');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'User is already verified' });
+    }
+
+    if (!user.otp || !user.otpExpires || Date.now() > user.otpExpires) {
+      return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
+    }
+
+    if (user.otp !== otp.trim()) {
+      return res.status(400).json({ message: 'Invalid OTP code' });
+    }
+
+    // Mark User as Verified & Clear OTP
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    // AUTO-LOGIN
+    const token = generateToken(user._id);
+    setTokenCookie(res, token);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Email verified successfully!',
+      token,
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        avatar: user.avatar,
+        isVerified: user.isVerified,
+      },
+    });
+  } catch (err) {
+    console.error('Verify OTP Error:', err);
+    return res.status(500).json({ message: 'Failed to verify OTP' });
+  }
+}
 
 // RESEND OTP CONTROLLER
 export async function resendOTPController(req, res) {
@@ -134,9 +189,9 @@ export async function loginController(req, res) {
     }
 
     if (!user.isVerified) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: 'Email is not verified. Please verify your OTP first.',
-        isVerified: false 
+        isVerified: false
       });
     }
 
@@ -198,7 +253,7 @@ export async function getMeController(req, res) {
 // UPDATE PROFILE CONTROLLER
 export async function updateProfileController(req, res) {
   try {
-    const { firstName, lastName} = req.body;
+    const { firstName, lastName } = req.body;
     const userId = req.user._id;
 
     const user = await User.findById(userId);
