@@ -7,23 +7,21 @@ export const AuthSuccess = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
+
   useEffect(() => {
     const token = searchParams.get('token');
     const userPayload = searchParams.get('user');
 
     if (token && userPayload) {
       try {
-        const userData = JSON.parse(decodeURIComponent(userPayload));
+        const userData = JSON.parse(userPayload); // decodeURIComponent hata diya
 
-        // 1. Store the token in localStorage
         localStorage.setItem('token', token);
 
-        // 2. Auth context state update
         if (setUser) {
           setUser(userData);
         }
 
-        // 3. Full page reload -
         setTimeout(() => {
           window.location.href = '/';
         }, 100);
