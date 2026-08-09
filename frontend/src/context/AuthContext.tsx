@@ -8,6 +8,7 @@ import type {
   ApiResponse,
 } from '../types/auth.types';
 import { authService } from '../services/auth.service';
+import { connectSocket, disconnectSocket } from '../services/socket.service';
 
 interface AuthContextType {
   user: User | null;
@@ -36,6 +37,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await authService.getMe();
       if (res.success && res.user) {
         setUser(res.user);
+
+        // if user already logged in, connect the socket with the token from localStorage
+        const token = localStorage.getItem('token');
+        if (token) {
+          connectSocket(token);
+        }
       } else {
         setUser(null);
       }
@@ -52,6 +59,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await authService.login(credentials);
       if (res.success && res.user) {
         setUser(res.user);
+
+        // save token to localStorage and connect socket after successful login
+        if (res.token) {
+          localStorage.setItem('token', res.token);
+          connectSocket(res.token);
+        }
       }
       return res;
     } catch (err: any) {
@@ -80,6 +93,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await authService.verifyOtp(data);
       if (res.success && res.user) {
         setUser(res.user);
+
+        // After OTP verification, treat it like a login and connect the socket with the token
+        if (res.token) {
+          localStorage.setItem('token', res.token);
+          connectSocket(res.token);
+        }
       }
       return res;
     } catch (err: any) {
@@ -126,6 +145,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('Logout error:', err);
     } finally {
       setUser(null);
+      localStorage.removeItem('token'); // clear token from localStorage
+      disconnectSocket(); // Socket disconnect after logout
     }
   };
 

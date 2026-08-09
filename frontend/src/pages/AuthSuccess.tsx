@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from "../hooks/useAuth";
+import { connectSocket } from '../services/socket.service';
 
 export const AuthSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -17,6 +18,8 @@ export const AuthSuccess = () => {
         const userData = JSON.parse(userPayload); // decodeURIComponent hata diya
 
         localStorage.setItem('token', token);
+
+        connectSocket(token); // Connect to the socket with the new token
 
         if (setUser) {
           setUser(userData);
