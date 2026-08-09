@@ -16,14 +16,9 @@ import { authUser } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
-// Helper to sanitize FRONTEND_URL and prevent trailing-slash issues
-const getFrontendUrl = () => {
-    return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-};
 
-// ==========================================
-//           PUBLIC AUTH ROUTES
-// ==========================================
+
+//  ----------  PUBLIC AUTH ROUTES  ------------
 
 // Register User
 router.post(
@@ -90,9 +85,9 @@ router.get(
 
 router.get('/google/callback', (req, res, next) => {
     passport.authenticate('google', { session: false }, (err, user, info) => {
-        // Fallback domain safely handled
-        const frontendUrl = process.env.FRONTEND_URL || 'https://hyperai-psi.vercel.app';
 
+        // Fallback domain safely handled
+        const frontendUrl = (process.env.FRONTEND_URL || 'https://hyperai-psi.vercel.app').replace(/\/$/, '');
         if (err) {
             console.error('Passport Auth Error:', err);
             return res.redirect(`${frontendUrl}/login?error=auth_failed`);

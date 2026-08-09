@@ -306,7 +306,7 @@ export async function googleCallbackController(req, res) {
     );
 
     // Redirect to frontend auth-success page
-    return res.redirect(`${frontendUrl}/auth-success?token=${token}&user=${userPayload}`);
+    return res.redirect(`${frontendUrl}/auth-success?user=${userPayload}`);
   } catch (error) {
     console.error('Google Auth Controller Error:', error);
     return res.redirect(`${frontendUrl}/login?error=google_failed`);

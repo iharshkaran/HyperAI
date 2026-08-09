@@ -9,11 +9,12 @@ import authRoutes from './routes/auth.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 
 const app = express();
+app.set("trust proxy", 1);
 
 // Cross-Origin Resource Sharing (CORS) Configuration
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, ''),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   })
@@ -24,7 +25,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
-app.set("trust proxy", 1);
 
 // API Routes Mounting
 app.use('/api/auth', authRoutes);
