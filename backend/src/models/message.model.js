@@ -23,6 +23,10 @@ const messageSchema = new mongoose.Schema(
       default: "user",
       required: true,
     },
+    editCount: {
+      type: Number,
+      default: 0,
+    }
   },
   {
     timestamps: true,

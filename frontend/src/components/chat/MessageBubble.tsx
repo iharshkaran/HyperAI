@@ -9,6 +9,7 @@ export interface Message {
     _id?: string;
     role: 'user' | 'model';
     content: string;
+    editCount?: number;
 }
 
 interface MessageBubbleProps {
@@ -27,7 +28,7 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(msg.content);
     const [isSaving, setIsSaving] = useState(false);
-    const [editCount, setEditCount] = useState(0);
+    const [editCount, setEditCount] = useState(msg.editCount || 0);
 
     const messageId = msg._id || msg.id;
 
@@ -53,7 +54,6 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
     };
 
     return (
-
         <div
             className={`group flex items-start gap-3 max-w-3xl mx-auto w-full my-3 ${isUser ? 'flex-row-reverse' : ''
                 }`}
@@ -94,7 +94,6 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
                         <CopyButton text={msg.content} />
 
                         {isUser && isLastUserMessage && editCount < 3 && (
-                            /* Pencil Button*/
                             <button
                                 type="button"
                                 onClick={() => {

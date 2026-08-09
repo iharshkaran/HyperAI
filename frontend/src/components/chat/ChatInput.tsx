@@ -25,14 +25,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     return (
 
-        <div className="p-2 pb-3 sm:p-3 sm:pb-5 bg-(--background) transition-all duration-300 ease-in">
+        <div className="p-3 pb-4 sm:pb-5 bg-(--background) transition-all duration-300 ease-in">
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
                     onSendMessage(e);
                 }}
                 // Form Textarea Container
-                className="max-w-3xl mx-auto flex items-center gap-2 bg-(--box) border border-(--border) rounded-full sm:rounded-4xl pl-3.5 pr-2 py-2 sm:pl-5 sm:pr-2.5 sm:py-2.5 shadow-md focus-within:border-amber-500/60 focus-within:ring-1 focus-within:ring-amber-500/30 transition-all duration-200"
+                className="max-w-3xl mx-auto flex items-center gap-2 bg-(--box) border border-(--border) rounded-4xl pl-5 pr-2.5 py-2.5 shadow-md focus-within:border-amber-500/60 focus-within:ring-1 focus-within:ring-amber-500/30 transition-all duration-200"
             >
                 <textarea
                     ref={textareaRef}
@@ -58,7 +58,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <button
                     type="submit"
                     disabled={!input.trim() || isLoading}
-                    className="p-1.5 sm:p-2.5 bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-30 text-black rounded-full transition-all duration-200 cursor-pointer disabled:cursor-not-allowed shrink-0 active:scale-95 shadow-xs"
+                    className="p-2 sm:p-2.5 bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-30 text-black rounded-full transition-all duration-200 cursor-pointer disabled:cursor-not-allowed shrink-0 active:scale-95 shadow-xs"
                 >
                     {isLoading ? (
                         <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-black/80 border-t-transparent rounded-full animate-spin" />
