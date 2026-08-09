@@ -1,54 +1,33 @@
 import Message from "../models/message.model.js";
 
-export async function buildChatContext(chatId, memory = []) {
-    try {
-        // Short-Term Memory (STM)
-        let stm = [];
-        if (chatId) {
-            const messageHistory = await Message.find({ chat: chatId })
-                .sort({ createdAt: -1 })
-                .limit(20)
-                .lean();
+export async function buildChatContext(chatId, memory) {
 
-            // Oldest first chronological order
-            messageHistory.reverse();
+    // Short term memory
+    const messageHistory = await Message.find({ chat: chatId })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean();
 
-            stm = messageHistory.map((item) => ({
-                role: item.role === "model" ? "model" : "user", // Strict role check
-                parts: [{ text: item.content }],
-            }));
-        }
+    messageHistory.reverse();
 
-        // Long-Term Memory (LTM)
-        const memoryText = memory
-            .map((item) => item.metadata?.text || item.text)
-            .filter(Boolean)
-            .join("\n- ");
+    const stm = messageHistory.map((item) => ({
+        role: item.role,
+        parts: [{ text: item.content }]
+    }));
 
-        const ltm = [];
+    // Long term memory
+    const memoryText = memory.map((item) => item.metadata?.text).filter(Boolean).join("\n");
 
+    const ltm = memoryText
+        ? [
+            {
+                role: "user",  // 🟢 FIX: "model" se "user" kiya
+                parts: [{
+                    text: `These are some relevant previous memories/messages from the user. Use them to provide context if needed:\n${memoryText}`
+                }]
+            }
+        ]
+        : []; // 🟢 Agar memory khaali hai, toh empty ltm bhejo (empty text wala fake message avoid karo)
 
-        if (memoryText.trim().length > 0) {
-            ltm.push({
-                role: "user",
-                parts: [
-                    {
-                        text: `[SYSTEM CONTEXT - RELEVANT LONG-TERM MEMORIES]:\n- ${memoryText}\n\n(Use these facts about the user if relevant to the conversation)`,
-                    },
-                ],
-            });
-
-            // Model acknowledgement to prime conversation flow
-            ltm.push({
-                role: "model",
-                parts: [{ text: "Understood. I have loaded the relevant user memory context." }],
-            });
-        }
-
-        return [...ltm, ...stm];
-
-    } catch (error) {
-        console.error("Error in buildChatContext:", error);
-        return [];
-    }
+    return [...ltm, ...stm];
 }

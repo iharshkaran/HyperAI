@@ -36,7 +36,7 @@ export async function handleAiMessage(socket, messagePayload) {
             }
 
             existingMsg.content = trimmedContent;
-            existingMsg.editCount = (existingMsg.editCount || 0) + 1; // 👈 increment + persist
+            existingMsg.editCount = (existingMsg.editCount || 0) + 1;
             await existingMsg.save();
             userMsg = existingMsg;
 
@@ -49,7 +49,7 @@ export async function handleAiMessage(socket, messagePayload) {
                 messageId: existingMsg._id,
                 chatId,
                 newContent: trimmedContent,
-                editCount: existingMsg.editCount, // 👈 frontend ko bhejo
+                editCount: existingMsg.editCount,
             });
 
         } else {
@@ -76,7 +76,6 @@ export async function handleAiMessage(socket, messagePayload) {
                 role: "user"
             });
 
-            // 👇 NAYA: real DB id turant frontend ko bhejo, tempId ke saath
             socket.emit("user-message-saved", {
                 clientId,
                 messageId: userMsg._id,
@@ -95,7 +94,8 @@ export async function handleAiMessage(socket, messagePayload) {
             }
         }
 
-        const { vectors, memory } = await getRelevantMemory(userId, trimmedContent);
+        // 🟢 FIX: parameter order (text, userId) — pehle userId, trimmedContent ulta tha
+        const { vectors, memory } = await getRelevantMemory(trimmedContent, userId);
         await saveMessageMemory({ vectors, messageId: userMsg._id, chatId, userId, text: trimmedContent });
 
         const fullPrompt = await buildChatContext(chatId, memory);
