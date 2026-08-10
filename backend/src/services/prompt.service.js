@@ -2,7 +2,6 @@ import Message from "../models/message.model.js";
 
 export async function buildChatContext(chatId, memory) {
 
-    // Short term memory
     const messageHistory = await Message.find({ chat: chatId })
         .sort({ createdAt: -1 })
         .limit(20)
@@ -15,19 +14,18 @@ export async function buildChatContext(chatId, memory) {
         parts: [{ text: item.content }]
     }));
 
-    // Long term memory
-    const memoryText = memory.map((item) => item.metadata?.text).filter(Boolean).join("\n");
+    const memoryText = memory.map((item) => item.metadata?.text).filter(Boolean).join("\n---\n");
 
     const ltm = memoryText
         ? [
             {
-                role: "user",  // 🟢 FIX: "model" se "user" kiya
+                role: "user",
                 parts: [{
-                    text: `These are some relevant previous memories/messages from the user. Use them to provide context if needed:\n${memoryText}`
+                    text: `[System note: The following are a few loosely-related snippets pulled from the user's other past conversations, based on keyword/semantic similarity. They may or may not be fully relevant or complete — treat them as hints, not confirmed facts. If they seem relevant to the current question, use them; if unsure or if they seem incomplete/contradictory, prioritize the current conversation and ask the user to clarify instead of guessing.]\n\n${memoryText}`
                 }]
             }
         ]
-        : []; // 🟢 Agar memory khaali hai, toh empty ltm bhejo (empty text wala fake message avoid karo)
+        : [];
 
     return [...ltm, ...stm];
 }
