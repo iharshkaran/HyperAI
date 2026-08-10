@@ -1,7 +1,6 @@
 import Message from "../models/message.model.js";
 
 export async function buildChatContext(chatId, memory) {
-
     const messageHistory = await Message.find({ chat: chatId })
         .sort({ createdAt: -1 })
         .limit(20)
@@ -15,17 +14,18 @@ export async function buildChatContext(chatId, memory) {
     }));
 
     const memoryText = memory.map((item) => item.metadata?.text).filter(Boolean).join("\n---\n");
+    console.log("🧠 RETRIEVED MEMORY FOR THIS CHAT:\n", memoryText);
 
-    const ltm = memoryText
-        ? [
-            {
-                role: "user",
-                parts: [{
-                    text: `[System note: The following are a few loosely-related snippets pulled from the user's other past conversations, based on keyword/semantic similarity. They may or may not be fully relevant or complete — treat them as hints, not confirmed facts. If they seem relevant to the current question, use them; if unsure or if they seem incomplete/contradictory, prioritize the current conversation and ask the user to clarify instead of guessing.]\n\n${memoryText}`
-                }]
+    // LTM ko alag se banane ke bajaye, seedha STM ke latest user message mein inject karo
+    if (memoryText && stm.length > 0) {
+        for (let i = stm.length - 1; i >= 0; i--) {
+            if (stm[i].role === 'user') {
+                stm[i].parts[0].text = `<past_memory>\n${memoryText}\n</past_memory>\n\n${stm[i].parts[0].text}`;
+                break; // Ek baar latest user message mein add ho gaya, toh loop break kar do
             }
-        ]
-        : [];
+        }
+    }
 
-    return [...ltm, ...stm];
+    // Sirf stm return karo, Gemini API khush rahega
+    return stm;
 }

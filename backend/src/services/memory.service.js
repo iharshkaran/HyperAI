@@ -23,7 +23,7 @@ export async function getRelevantMemory(text, userId) {
             }
         });
 
-        const RELEVANCE_THRESHOLD = 0.55; // 👈 calibrated Hinglish embeddings ke hisaab se
+        const RELEVANCE_THRESHOLD = 0.6;
         const memory = (rawMemory || []).filter((item) => (item.score ?? 0) >= RELEVANCE_THRESHOLD);
 
         return { vectors, memory }
