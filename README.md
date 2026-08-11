@@ -3,7 +3,7 @@
 ### A Production-Style AI Assistant with Real-Time Streaming & Semantic Memory
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-3078C6?logo=typescript)
+![TypeScript](https://img.shields.io/badge/TypeScript-gray?logo=typescript)
 ![NodeJS](https://img.shields.io/badge/Node.js-1E5128?logo=node.js)
 ![Express](https://img.shields.io/badge/Express.js-000000?logo=express)
 ![MongoDB](https://img.shields.io/badge/MongoDB-191A19?logo=mongodb)
@@ -288,8 +288,6 @@ npm run dev
 
 ## 🎯 Why I Built HyperAI
 
-Most beginner projects focus on CRUD operations.
-
 With HyperAI, my goal was different. I wanted to understand how modern AI assistants maintain conversational context, retrieve relevant memories using vector databases, and stream responses in real time — and then take it all the way through real deployment: cross-origin cookies, browser privacy restrictions, and cloud-host networking quirks included.
 
 ---
@@ -307,20 +305,7 @@ With HyperAI, my goal was different. I wanted to understand how modern AI assist
 
 ---
 
-## 🚧 Future Improvements
-
-- 📄 File upload + RAG over documents
-- 🖼️ Image understanding
-- 🎤 Voice conversations
-- 🤖 Multiple AI model support
-- 🛑 Stop generation mid-stream
-- 🔄 Regenerate response
-- 🌐 Web search integration
-- 📤 Chat export
-
----
-
-## 💼 Resume Highlights
+## Highlights
 
 - Designed a dual-memory architecture using **MongoDB (STM)** and **Pinecone (LTM)**.
 - Implemented **real-time token streaming** using the Gemini Streaming API and Socket.IO.
@@ -328,12 +313,6 @@ With HyperAI, my goal was different. I wanted to understand how modern AI assist
 - Hardened authentication with a **cookie + Bearer-token dual strategy** to support browsers that block cross-site cookies (Brave, Safari ITP), across both REST APIs and the Socket.IO handshake.
 - Migrated transactional email from SMTP to a **Brevo HTTP API integration** to work around outbound SMTP restrictions on free-tier cloud hosts.
 - Developed a modular full-stack AI application using React, TypeScript, Express, MongoDB, and Pinecone.
-
----
-
-## 🙏 Acknowledgements
-
-Special thanks to Google Gemini, Pinecone, MongoDB, React, Socket.IO, and Tailwind CSS for the tools that made this project possible.
 
 ---
 
